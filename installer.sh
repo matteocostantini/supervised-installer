@@ -33,7 +33,7 @@ FILE_INTERFACES="/etc/network/interfaces"
 FILE_NM_CONF="/etc/NetworkManager/NetworkManager.conf"
 FILE_NM_CONNECTION="/etc/NetworkManager/system-connections/default"
 
-URL_RAW_BASE="https://raw.githubusercontent.com/home-assistant/supervised-installer/master/files"
+URL_RAW_BASE="https://raw.githubusercontent.com/matteocostantini/supervised-installer/matteocostantini-patch-1/files"
 URL_VERSION="https://version.home-assistant.io/stable.json"
 URL_BIN_APPARMOR="${URL_RAW_BASE}/hassio-apparmor"
 URL_BIN_HASSIO="${URL_RAW_BASE}/hassio-supervisor"
@@ -48,7 +48,6 @@ URL_APPARMOR_PROFILE="https://version.home-assistant.io/apparmor.txt"
 
 # Check env
 command -v systemctl > /dev/null 2>&1 || MISSING_PACKAGES+=("systemd")
-command -v nmcli > /dev/null 2>&1 || MISSING_PACKAGES+=("network-manager")
 command -v apparmor_parser > /dev/null 2>&1 || MISSING_PACKAGES+=("apparmor")
 command -v docker > /dev/null 2>&1 || MISSING_PACKAGES+=("docker")
 command -v jq > /dev/null 2>&1 || MISSING_PACKAGES+=("jq")
@@ -93,27 +92,6 @@ if [[ "$(sysctl --values kernel.dmesg_restrict)" != "0" ]]; then
     echo 0 > /proc/sys/kernel/dmesg_restrict
     echo "kernel.dmesg_restrict=0" >> /etc/sysctl.conf
 fi
-
-# Create config for NetworkManager
-info "Creating NetworkManager configuration"
-curl -sL "${URL_NM_CONF}" > "${FILE_NM_CONF}"
-if [ ! -f "$FILE_NM_CONNECTION" ]; then
-    curl -sL "${URL_NM_CONNECTION}" > "${FILE_NM_CONNECTION}"
-fi
-
-warn "Changes are needed to the /etc/network/interfaces file"
-info "If you have modified the network on the host manualy, those can now be overwritten"
-info "If you do not overwrite this now you need to manually adjust it later"
-info "Do you want to proceed with overwriting the /etc/network/interfaces file? [N/y] "
-read answer < /dev/tty
-
-if [[ "$answer" =~ "y" ]] || [[ "$answer" =~ "Y" ]]; then
-    info "Replacing /etc/network/interfaces"
-    curl -sL "${URL_INTERFACES}" > "${FILE_INTERFACES}";
-fi
-
-info "Restarting NetworkManager"
-systemctl restart "${SERVICE_NM}"
 
 # Parse command line parameters
 while [[ $# -gt 0 ]]; do
